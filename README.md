@@ -5,12 +5,12 @@
 **Preprocess | Localization | CAHT Center Detection | Post-Processing**
 
 This repository implements a pupil-segmentation pipeline built around
-CAHT (Circular/Axial Hough Transform).\
+CAHT (Circular/Axial Hough Transform).
 The system is divided into four major stages:
 
-1.  **Preprocess**\
-2.  **Pupil Localization**\
-3.  **CAHT-Based Center Identification**\
+1.  **Preprocess**
+2.  **Pupil Localization**
+3.  **CAHT-Based Center Identification**
 4.  **Post-Processing (Mask Refinement + BIoU Computation)**
 
 
@@ -18,14 +18,14 @@ The system is divided into four major stages:
 
 ### `preprocessEyeImage()`
 
-**Purpose:**\
+**Purpose:**
 Prepare the input eye image for accurate edge extraction and shape
 analysis.
 
-**Typical operations:**\
-- Grayscale conversion\
-- Intensity normalization\
-- MEdian Blur filtering\
+**Typical operations:**
+- Grayscale conversion
+- Intensity normalization
+- MEdian Blur filtering
 - Cropping/resizing depending on source
 
 
@@ -37,9 +37,9 @@ Choosing the darkest spot in the given eye segmented from the entire face.
 ## 3. CAHT-Based Center Identification
 Primary pipeline function.
 ### `findPupilMask()`
-**Outputs:**\
-- `pupilMask`\
-- `center`\
+**Outputs:**
+- `pupilMask`
+- `center`
 - `radius`
 
 ### `Canny(I, edges, low, high, 3)` 
@@ -65,54 +65,119 @@ The core input is an image, typically pre-processed to find edges.
 
 `cv::Mat acc = cv::Mat::zeros(rows, cols, CV_32SC1);`
 
-#### 3. CAHT Voting Loop (Center Detection)This step performs the standard Hough voting, where every edge pixel contributes votes to potential circle centers.C++
-// For each radius:
-for (int r = rMin; r <= rMax; r++)
-{
-    // Iterate through all edge pixels (x, y)
-    for (int y = 0; y < rows; y++)
-    {
-        uchar* eRow = edges.ptr<uchar>(y); // Get the edge row data
-        for (int x = 0; x < cols; x++)
-        {
-            // For each edge pixel:
-            if (!eRow[x]) continue;
+#### 3. CAHT Voting Loop (Center Detection)This step performs the standard Hough voting, where every edge pixel contributes votes to potential circle centers.
+This document describes the logic used for computing a pupil mask based
+on circle candidates in an image.
 
-            // For each angle on that radius (usually 0 to 360 degrees, or a simplified subset):
-            // (Note: The angle loop is often implicitly handled by pre-calculating a table or iterating over sampled points)
-            
-            // Assuming 'ang' is the angle of the gradient or a sampled angle around the point (x, y)
-            // The coordinates of the potential center (cx, cy) are calculated:
-            int cx = cvRound(x - r * cos(ang));
-            int cy = cvRound(y - r * sin(ang));
+##### Compute Mean Intensity Inside the Circle
 
-            // ...
+This checks how dark the region is.
 
-            // Vote into the accumulator:
-            acc.at<int>(cy, cx)++;
-        }
-    }
+##### Crop the bounding box
+
+``` cpp
+int x0 = std::max(0, cpt.x - r);
+int y0 = std::max(0, cpt.y - r);
+int x1 = std::min(I.cols-1, cpt.x + r);
+int y1 = std::min(I.rows-1, cpt.y + r);
+Rect roi(x0,y0,x1-x0+1,y1-y0+1);
+if (roi.width <=0 || roi.height <=0) continue;
+Mat patch = I(roi);
+```
+
+`patch` = sub-image containing the entire candidate circle.
+
+##### Create a circular mask inside that patch
+
+``` cpp
+Mat circMask = Mat::zeros(patch.size(), CV_8UC1);
+circle(circMask, Point(cpt.x - x0, cpt.y - y0), r, Scalar(255), FILLED);
+```
+
+This mask selects only pixels inside the circle.
+
+##### Compute mean intensity
+
+``` cpp
+Scalar meanInside = mean(patch, circMask);
+double meanVal = meanInside[0];
+```
+
+-   Dark region implies lower meanVal\
+-   Bright region implies higher meanVal
+
+
+##### Edge coverage along circle boundary
+
+This checks how well edges align with the circle boundary.
+
+##### Sample many points along the circumference
+
+``` cpp
+int N = std::max(20, r);
+int edgeCount = 0;
+for (int k = 0; k < N; k++) {
+    double a = 2.0 * CV_PI * k / N;
+    int sx = cvRound(cpt.x + r * cos(a));
+    int sy = cvRound(cpt.y + r * sin(a));
+```
+
+##### Count how many points fall on edges
+
+(For example, from a Canny detector)
+
+``` cpp
+if (edges.at<uchar>(sy,sx) > 0) edgeCount++;
+```
+
+##### Compute edge coverage fraction
+
+``` cpp
+double edgeCoverage = double(edgeCount) / double(N);
+```
+
+-   High edgeCoverage - circle boundary matches real edges\
+-   Low edgeCoverage - likely noise or incorrect circle
+
+
+##### Compute Combined Score
+
+``` cpp
+double score = (255.0 - meanVal) * 0.6 + edgeCoverage * 255.0 * 0.4;
+```
+
+##### Breakdown:
+
+-   `(255 - meanVal)` - darker circles score higher\
+-   `edgeCoverage * 255` - strong edge alignment scores higher\
+-   Weights:
+    -   0.6 for darkness\
+    -   0.4 for edge alignment
+
+
+##### Penalty for Distance from Image Center
+
+Encourages selecting circles near the eye's center.
+
+``` cpp
+double cx = I.cols/2.0, cy = I.rows/2.0;
+double dist = sqrt((cpt.x-cx)*(cpt.x-cx) + (cpt.y-cy)*(cpt.y-cy));
+double distPenalty = std::max(0.0, dist - std::min(I.cols,I.rows)/4.0);
+score -= distPenalty * 0.05;
+```
+
+-   Inside central quarter - no penalty\
+-   Farther away - penalized
+
+##### Select Best Circle
+
+``` cpp
+if (score > bestScore) {
+    bestScore = score;
+    bestC = c;
 }
-
-The Voting Equation - The equation cx = cvRound(x - r * cos(ang)) and cy = cvRound(y - r * sin(ang)) is based on the circle formula:$$(x - c_x)^2 + (y - c_y)^2 = r^2$$If an edge point $(x, y)$ lies on a circle of radius $r$, the center $(c_x, c_y)$ must be located at a distance $r$ from $(x, y)$ in the direction opposite to the angle $\theta$ ($\text{ang}$), which often relates to the local edge gradient direction. Find the Best Center After the voting loop, the 2D accumulator contains the total support for every possible center location. The location with the maximum votes is the most likely circle center. Iterate through the accumulator 'acc' to find the maximum value (maxVal) and its coordinates (bestCenter)
-if (row[x] > maxVal)
-{
-    maxVal = row[x];
-    bestCenter = {x, y};
-}
-The location with the most votes is the center of the circle that had the most edge support across all radii $\rightarrow$ likely the pupil center.5. Estimate Radius (Post-Center Fixation)With the bestCenter fixed, the algorithm now searches for the best radius $r$ by sampling along the circumference of a circle centered at bestCenter.C++// center is now fixed as 'bestCenter'
-for (int r = rMin; r <= rMax; r++)
-{
-    // For each radius:
-    // Sample the circumference of the circle (center, r)
-    // Count how many samples land on edge pixels
-    // ...
-    if (edges.at<uchar>(py,px)) // py, px are the sampled coordinates on the circumference
-        votes++;
-
-    // Choose the radius with the most edge support (not explicitly shown, but implied by the logic)
-}
-// This gives a robust radius estimate and sets the final 'radius'.
+```
+The chosen circle is the one with the highest final score.
 
 Morphological operations are applied afterwards. 
 The expression 
@@ -122,7 +187,8 @@ constructs a small elliptical kernel used for dilation or erosion.
 performs a closing operation dilation followed by erosion which closes small gaps along edges. 
 A similar call with MORPH_OPEN removes thin streaks. These steps ensure CAHT’s custom streak removal operation.
 
-### Build Pupil MaskFinally, a binary mask of the detected pupil is generated using the determined center and radius.C++mask = cv::Mat::zeros(I.size(), CV_8UC1);
+### Build Pupil MaskFinally, a binary mask of the detected pupil is generated using the determined center and radius.
+mask = cv::Mat::zeros(I.size(), CV_8UC1);
 cv::circle(mask, center, radius, 255, FILLED);
 
 
