@@ -3,6 +3,60 @@
 Video Demo link : https://drive.google.com/file/d/1njDRtyG3fm9Un3lxuU6lclEvXTJCw6ma/view?usp=drive_link
 Report : 
 
+# Usage :
+This project gives access to two command line tools.
+1. batchProcess
+2. checkPupil
+Follow the steps below to get the executables in place. Note : There is a dependency and you will need to install the dependency first.
+
+## Step 1: Clone the project
+``` cpp
+git clone https://github.com/chandramathi/imageforensics.git
+```
+Once clone is successful
+``` cpp
+cd imageforensics
+```
+## Step 2: Compile the project
+``` cpp
+clang++ -std=c++14 -I/usr/local/include/opencv4  -I/opt/homebrew/include  -I/opt/homebrew/include -I./include  -L/usr/local/lib -L/opt/homebrew/lib Main.cpp PupilSegment.cpp FaceSegmentation.cpp EyeSegmentation.cpp  BIoU.cpp  -o checkPupil  -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_photo -ldlib -framework Accelerate
+```
+
+``` cpp
+clang++ -std=c++14 -I/usr/local/include/opencv4  -I/opt/homebrew/include  -I/opt/homebrew/include -I./include  -L/usr/local/lib -L/opt/homebrew/lib BatchRunner.cpp BioU.cpp PupilSegment.cpp FaceSegmentation.cpp EyeSegmentation.cpp -o batchProcess -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_photo -ldlib -framework Accelerate
+```
+This step will give you access to two command line tools that you can use in the next step.
+
+## Step 3: Test using the available dataset
+
+### Tool 1 checkPupil : Allows you to individually classify any given image/video
+Usage is as given below
+``` cpp
+./checkPupil --face=./imageDataset/synthetic/face/fface1.jpg 
+```
+``` cpp
+./checkPupil --video=./imageDataset/synthetic/video/video1.mp4
+```
+For video files the default is 30 frames. This can be modified using command line argument frames.
+
+### Tool 2 batchProcess : Allows you to check the BIoU score for all the files in a bulk by giving the folder path of the dataset
+Note: The structure of the data set should be as follows
+/root
+    |_____real
+        |_____face
+        |_____video
+    |_____synthetic
+        |_____face
+        |_____video
+        |_____eye
+``` cpp
+./batchProcess ./imageDataset
+```
+
+### Output
+The results are stored in a `results` directory in the current folder with the visual output of the masked pupil and BIoU score. The scores are written to the terminal as well, along with the accuracy.
+        
+
 # Dependencies
 ## Dlib Library
 
