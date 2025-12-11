@@ -1,7 +1,8 @@
 # imageforensics
 
 Video Demo link : https://drive.google.com/file/d/1njDRtyG3fm9Un3lxuU6lclEvXTJCw6ma/view?usp=drive_link
-Report : 
+
+Report : https://drive.google.com/file/d/1y-APfPtpcWAFhMi_RC04lmAXGRjPK_i-/view?usp=drive_link
 
 # Usage :
 This project gives access to two command line tools.
