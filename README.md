@@ -62,7 +62,7 @@ Note: The structure of the data set should be as follows
 ```
 
 ### Output
-The results are stored in a `results` directory in the current folder with the visual output of the masked pupil and BIoU score. The scores are written to the terminal as well, along with the accuracy.
+The results are stored in a `results` directory in the current folder with the visual output of the masked pupil and BIoU score. The scores are written to the terminal as well, along with the accuracy. It is also written to a csv file biou_scores.csv in the current working directory.
         
 
 # Dependencies
