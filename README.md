@@ -148,10 +148,10 @@ double score = (255.0 - meanVal) * 0.6 + edgeCoverage * 255.0 * 0.4;
 
 ##### Breakdown:
 
--   `(255 - meanVal)` - darker circles score higher\
--   `edgeCoverage * 255` - strong edge alignment scores higher\
+-   `(255 - meanVal)` - darker circles score higher
+-   `edgeCoverage * 255` - strong edge alignment scores higher
 -   Weights:
-    -   0.6 for darkness\
+    -   0.6 for darkness
     -   0.4 for edge alignment
 
 
