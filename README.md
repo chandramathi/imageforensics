@@ -26,6 +26,7 @@ clang++ -std=c++14 -I/usr/local/include/opencv4  -I/opt/homebrew/include  -I/opt
 clang++ -std=c++14 -I/usr/local/include/opencv4  -I/opt/homebrew/include  -I/opt/homebrew/include -I./include  -L/usr/local/lib -L/opt/homebrew/lib BatchRunner.cpp BioU.cpp PupilSegment.cpp FaceSegmentation.cpp EyeSegmentation.cpp -o batchProcess -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_photo -ldlib -framework Accelerate
 ```
 This step will give you access to two command line tools that you can use in the next step.
+Note: The include path can/may differ based on the current installation of your OpenCV and DLib libraries.
 
 ## Step 3: Test using the available dataset
 
