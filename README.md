@@ -17,6 +17,11 @@ Once clone is successful
 ``` cpp
 cd imageforensics
 ```
+Download the file from the following path (wasn't able to commit to git due to some unknown error so sharing it through gdrive) into the current working directory.
+```cpp
+https://drive.google.com/file/d/1bTncJBz7xaIIRg2VO590DAufrzhy4wxv/view?usp=drive_link
+```
+
 ## Step 2: Compile the project
 ``` cpp
 clang++ -std=c++14 -I/usr/local/include/opencv4  -I/opt/homebrew/include  -I/opt/homebrew/include -I./include  -L/usr/local/lib -L/opt/homebrew/lib Main.cpp PupilSegment.cpp FaceSegmentation.cpp EyeSegmentation.cpp  BIoU.cpp  -o checkPupil  -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_photo -ldlib -framework Accelerate
@@ -43,13 +48,13 @@ For video files the default is 30 frames. This can be modified using command lin
 ### Tool 2 batchProcess : Allows you to check the BIoU score for all the files in a bulk by giving the folder path of the dataset
 Note: The structure of the data set should be as follows
 /root
-    |_____real
-        |_____face
-        |_____video
-    |_____synthetic
-        |_____face
-        |_____video
-        |_____eye
+    ├── real
+    │   ├── face
+    │   └── video
+    └── synthetic
+        ├── face
+        ├── video
+        └── eye
 ``` cpp
 ./batchProcess ./imageDataset
 ```
