@@ -1,5 +1,38 @@
 # imageforensics
 
+# Dependencies
+## Dlib Library
+
+Installation guide : https://learnopencv.com/install-dlib-on-windows/ 
+https://github.com/davisking/dlib 
+
+Download dlib source
+
+1. Go to the official website of dlib and download the latest .zip or source archive. 
+
+2. Extract the archive to a folder, e.g. C:\libs\dlib-19.xx.
+
+3. Open a command prompt. Make a build directory
+
+cd C:\libs\dlib-19.xx
+mkdir build
+cd build
+
+
+4. Run CMake to configure the build
+Use a command like (for a 64-bit Visual Studio build):
+
+cmake -G "Visual Studio 14 2015 Win64" -A x64 ..
+
+Replace generator name ("Visual Studio 14 2015 Win64") with the version you have (e.g. VS2019, VS2022, etc). The -A x64 ensures 64-bit target. 
+
+5. Build the library
+
+cmake --build . --config Release
+
+This will compile dlib (C++ code) and generate library files (e.g. .lib, .dll or .a, depending on configuration).
+
+
 # Pupil Segmentation Pipeline
 
 **Preprocess | Localization | CAHT Center Detection | Post-Processing**
