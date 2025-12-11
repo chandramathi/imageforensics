@@ -14,21 +14,27 @@ Download dlib source
 
 3. Open a command prompt. Make a build directory
 
+``` cpp
 cd C:\libs\dlib-19.xx
 mkdir build
 cd build
+```
 
 
 4. Run CMake to configure the build
 Use a command like (for a 64-bit Visual Studio build):
 
+``` cpp
 cmake -G "Visual Studio 14 2015 Win64" -A x64 ..
+```
 
 Replace generator name ("Visual Studio 14 2015 Win64") with the version you have (e.g. VS2019, VS2022, etc). The -A x64 ensures 64-bit target. 
 
 5. Build the library
 
+```
 cmake --build . --config Release
+```
 
 This will compile dlib (C++ code) and generate library files (e.g. .lib, .dll or .a, depending on configuration).
 
