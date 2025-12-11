@@ -19,20 +19,27 @@ static void preprocessForPupil(const Mat &in, Mat &out)
     out = tmp;
 }
 
-// The core function that performs contrast adaptive hough transform
-// to segment the pupil mask from the eye segment
-// pupil being the darkest region in the eye
-bool findPupilMask(const Mat &eyeGray,
-                   Mat &pupilMask,
-                   Point &center,
-                   int &radius,
-                   int cannyLow,
-                   int cannyHigh,
-                   int houghMinR,
-                   int houghMaxR,
-                   double dp,
-                   int minDist,
-                   int houghParam1,
+/**
+ * @brief 
+ * The core function that performs contrast adaptive hough transform
+ * to segment the pupil mask from the eye segment
+ * pupil being the darkest region in the eye
+ * @param eyeGray The input grayscale image patch containing the isolated eye region
+ * @param pupilMask Output parameter: The binary mask generated for the detected pupil.
+ * @param center Output parameter: The coordinates ($\text{Point}$) of the detected pupil center.
+ * @param radius Output parameter: The radius ($\text{int}$) of the detected pupil.
+ * @param cannyLow Parameter: The lower threshold value used for the Canny edge detection pre-processing step.
+ * @param cannyHigh Parameter: The upper threshold value used for the Canny edge detection pre-processing step.
+ * @param houghMinR Parameter: The minimum radius to search for in the Hough transform algorithm.
+ * @param houghMaxR Parameter: The maximum radius to search for in the Hough transform algorithm.
+ * @param dp Parameter: The inverse ratio of the accumulator resolution to the image resolution (specific to OpenCV's HoughCircles).
+ * @param minDist Parameter: The minimum distance required between the centers of detected circles.
+ * @param houghParam1 
+ * @param houghParam2 
+ * @return the status as sucess or failure of segmentation
+ */
+bool findPupilMask(const Mat &eyeGray, Mat &pupilMask, Point &center, int &radius, int cannyLow,
+                   int cannyHigh, int houghMinR, int houghMaxR, double dp, int minDist, int houghParam1,
                    int houghParam2)
 {
     if (eyeGray.empty() || eyeGray.channels() != 1)

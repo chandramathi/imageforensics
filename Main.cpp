@@ -7,7 +7,13 @@
 
 using namespace std;
 using namespace cv;
-
+/**
+ * @brief 
+ * Checks if the provided string path or identifier represents a video file or an image
+ * @param p The input string of the file path.
+ * @return true 
+ * @return false 
+ */
 bool isVideo(const string& p)
 {
     string lower = p;
@@ -18,33 +24,44 @@ bool isVideo(const string& p)
             lower.substr(lower.size()-4)==".avi" ||
             lower.substr(lower.size()-4)==".mov"));
 }
-
-void showEyeAndMask(const cv::Mat& eye, const cv::Mat& maskGray, double biou)
+/**
+ * @brief 
+ * Displays the detected eye region, superimposes the pupil mask, and prints the BIoU score for visual verification.
+ * @param eye The input image patch containing the isolated eye region.
+ * @param maskGray The grayscale image mask representing the detected pupil
+ * @param biou The Bounding Box IoU score calculated for the detected pupil.
+ */
+void showEyeAndMask(const Mat& eye, const Mat& maskGray, double biou)
 {
-    cv::Mat maskResized, maskColor, combined;
+    Mat maskResized, maskColor, combined;
 
     if (maskGray.size() != eye.size()) {
-        cv::resize(maskGray, maskResized, eye.size(), 0, 0, cv::INTER_NEAREST);
+        resize(maskGray, maskResized, eye.size(), 0, 0, INTER_NEAREST);
     } else {
         maskResized = maskGray.clone();
     }
 
-    cv::cvtColor(maskResized, maskColor, cv::COLOR_GRAY2BGR);
+    cvtColor(maskResized, maskColor, COLOR_GRAY2BGR);
 
     std::string label = "BIoU = " + std::to_string(biou).substr(0, 6);
-    int font = cv::FONT_HERSHEY_SIMPLEX;
+    int font = FONT_HERSHEY_SIMPLEX;
     double fs = 0.6;
     int th = 2;
 
-    cv::putText(maskColor, label, cv::Point(10, 25),
-                font, fs, cv::Scalar(0, 255, 0), th);
+    putText(maskColor, label, Point(10, 25),
+                font, fs, Scalar(0, 255, 0), th);
 
-    cv::hconcat(eye, maskColor, combined);
+    hconcat(eye, maskColor, combined);
 
-    cv::imshow("Eye + Mask", combined);
-    cv::waitKey(0);
+    imshow("Eye + Mask", combined);
+    waitKey(0);
 }
-
+/**
+ * @brief 
+ * 
+ * @param input 
+ * @param display 
+ */
 void runEyeMode(const string& input, bool display)
 {
     Mat eye = imread(input);
@@ -79,7 +96,12 @@ void runEyeMode(const string& input, bool display)
         showEyeAndMask(norm, mask, biou);
     }
 }
-
+/**
+ * @brief Processes an image input stream specifically in face detection when
+ * face parameter is used in the commandline argument and extracts eye and pupil from it
+ * @param input Path to the image file or camera device index to be processed.
+ * @param display Boolean flag to indicate whether the processing results should be displayed in a window.
+ */
 void runFaceMode(const string& input, bool display)
 {
     Mat left, right;
@@ -134,7 +156,13 @@ void runFaceMode(const string& input, bool display)
         showEyeAndMask(right, maskR, biouR);
     }
 }
-
+/**
+ * @brief 
+ * Executes the processing pipeline on a video file, applying analysis frame-by-frame.
+ * @param input Path to the video file or the index of the camera device to be used and only .mp4 files
+ * @param maxFrames Maximum number of frames to process before stopping (use 0 or a negative value to process the entire video)
+ * @param display Boolean flag to control whether the video output and analysis results should be displayed in real-time.
+ */
 void runVideoMode(const string& input, int maxFrames, bool display)
 {
     VideoCapture cap(input);
@@ -198,10 +226,18 @@ void runVideoMode(const string& input, int maxFrames, bool display)
     }
 }
 
+/**
+ * @brief 
+ * The core function that runs the command line tool checkPupil which can take one file at a time
+ * and process pupil based generated image classification
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        cerr << "Usage: ./app --eye=\"input_eye.jpg\" | --face=\"input_face.jpg\" | --video=\"input.mp4\" [--display on/off] [--frames numFrames]\n";
+        cerr << "Usage: ./checkPupil --eye=\"input_eye.jpg\" | --face=\"input_face.jpg\" | --video=\"input.mp4\" [--display on/off] [--frames numFrames]\n";
         return 1;
     }
 

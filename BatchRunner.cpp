@@ -12,6 +12,13 @@ using namespace std;
 using namespace cv;
 namespace fs = std::__fs::filesystem;
 
+/**
+ * @brief 
+ * Checks if the input file is a valid image file of known types
+ * @param p string of the file path of the input file
+ * @return true 
+ * @return false 
+ */
 bool isImageFile(const string& p)
 {
     string s = p;
@@ -21,6 +28,13 @@ bool isImageFile(const string& p)
             s.find(".jpeg") != string::npos);
 }
 
+/**
+ * @brief 
+ * Checks if the input file is a valid video file of known types
+ * @param p string of the file path of the input file
+ * @return true 
+ * @return false 
+ */
 bool isVideoFile(const string& p)
 {
     string s = p;
@@ -29,11 +43,15 @@ bool isVideoFile(const string& p)
             s.find(".avi") != string::npos ||
             s.find(".mov") != string::npos);
 }
-
-void saveResultImage(const Mat& eye,
-                     const Mat& mask,
-                     const string& outPath,
-                     double biou)
+/**
+ * @brief 
+ * Saves a composite image of the eye and the detected pupil mask to a specified file path, annotating it with the BIoU score.
+ * @param eye The input image patch containing the isolated eye region.
+ * @param mask The binary image mask representing the detected pupil region.
+ * @param outPath The full file path and name where the resulting image should be saved.
+ * @param biou The Bounding Box IoU score to be included as text annotation on the saved image.
+ */
+void saveResultImage(const Mat& eye, const Mat& mask, const string& outPath, double biou)
 {
     Mat maskR, maskColor, combined;
 
@@ -53,10 +71,15 @@ void saveResultImage(const Mat& eye,
     imwrite(outPath, combined);
 }
 
-void saveEyeAndMaskSeparately(const Mat& eye,
-                              const Mat& mask,
-                              const string& outDir,
-                              const string& baseName)
+/**
+ * @brief 
+ * Saves the original isolated eye image and its corresponding pupil mask as two distinct files in a specified output directory.
+ * @param eye The input image patch containing the isolated eye region.
+ * @param mask The binary image mask representing the detected pupil region.
+ * @param outDir The path to the directory where the resulting image files should be stored.
+ * @param baseName The base filename used for both the eye image and the mask image (For example used to create baseName_eye.png and baseName_mask.png).
+ */
+void saveEyeAndMaskSeparately(const Mat& eye, const Mat& mask, const string& outDir, const string& baseName)
 {
     string eyePath  = outDir + "/" + baseName + "_eye.jpg";
     string maskPath = outDir + "/" + baseName + "_mask.jpg";
@@ -65,49 +88,66 @@ void saveEyeAndMaskSeparately(const Mat& eye,
     imwrite(maskPath, mask);
 }
 
-void drawLandmarks(Mat& img,
-                   const std::vector<cv::Point>& pts)
+/**
+ * @brief 
+ * Draws a set of specified landmark points onto an input image.
+ * @param img  The input image on which the landmarks will be drawn (modified in place).
+ * @param pts The vector of coordinates representing the landmarks to be plotted on the image.
+ */
+void drawLandmarks(Mat& img, const std::vector<Point>& pts)
 {
     for (const auto& p : pts)
         circle(img, p, 2, Scalar(0,255,0), FILLED);
 }
 
-void saveFaceAnnotatedResult(const cv::Mat& eye,
-                             const cv::Mat& mask,
-                             const std::vector<cv::Point>& landmarks,
-                             const std::string& outPath,
-                             double biou)
+/**
+ * @brief 
+ * Saves an annotated image of the eye region, including the pupil mask, original landmarks, and the $\text{BIoU}$ score, to a specified file.
+ * @param eye The input image patch containing the isolated eye region.
+ * @param mask The binary image mask representing the detected pupil region.
+ * @param landmarks The vector of coordinates defining the original eye contour landmarks.
+ * @param outPath The full file path and name where the resulting annotated image should be saved.
+ * @param biou The Bounding Box IoU score to be included as text annotation on the saved image.
+ */
+void saveFaceAnnotatedResult(const Mat& eye, const Mat& mask, const std::vector<Point>& landmarks,
+                            const std::string& outPath, double biou)
 {
-    cv::Mat annotated = eye.clone();
+    Mat annotated = eye.clone();
 
     for (const auto& p : landmarks)
-        cv::circle(annotated, p, 2, cv::Scalar(0,255,0), cv::FILLED);
+        circle(annotated, p, 2, Scalar(0,255,0), FILLED);
 
     std::string label = "BIoU = " + std::to_string(biou).substr(0,6);
-    cv::putText(annotated, label, cv::Point(10,25),
-                cv::FONT_HERSHEY_SIMPLEX, 0.7,
-                cv::Scalar(0,255,0), 2);
+    putText(annotated, label, Point(10,25),
+                FONT_HERSHEY_SIMPLEX, 0.7,
+                Scalar(0,255,0), 2);
 
 
-    cv::Mat maskResized, maskColor;
+    Mat maskResized, maskColor;
 
     if (mask.size() != annotated.size())
-        cv::resize(mask, maskResized, annotated.size(), 0, 0, cv::INTER_NEAREST);
+        resize(mask, maskResized, annotated.size(), 0, 0, INTER_NEAREST);
     else
         maskResized = mask.clone();
 
-    cv::cvtColor(maskResized, maskColor, cv::COLOR_GRAY2BGR);
+    cvtColor(maskResized, maskColor, COLOR_GRAY2BGR);
 
-    cv::Mat combined;
-    cv::hconcat(annotated, maskColor, combined);
+    Mat combined;
+    hconcat(annotated, maskColor, combined);
 
-    cv::imwrite(outPath, combined);
+    imwrite(outPath, combined);
 }
 
-
-bool processEyeImage(const string& path,
-                     double& biou,
-                     const string& outDir)
+/**
+ * @brief 
+ * Serves as the main pipeline for processing a single eye image file, typically involving pupil detection, score calculation, and result saving.
+ * @param path The file path to the input eye image to be analyzed.
+ * @param biou Output parameter: The calculated BIoU score resulting from the pupil detection, returned by reference.
+ * @param outDir The directory path where the resulting annotated and/or separated images will be saved.
+ * @return true 
+ * @return false 
+ */
+bool processEyeImage(const string& path, double& biou, const string& outDir)
 {
     Mat eye = imread(path);
     if (eye.empty()) return false;
@@ -134,10 +174,17 @@ bool processEyeImage(const string& path,
     return true;
 }
 
+/**
+ * @brief 
+ * Executes the full processing pipeline for a single face image, encompassing eye extraction, pupil detection, scoring, and saving the annotated results.
+ * @param path The file path to the input image containing the face to be analyzed.
+ * @param biou Output parameter: The calculated BIoU score resulting from pupil detection in the face, returned by reference.
+ * @param outPath The directory path where the resulting annotated image of the processed face will be saved.
+ * @return true 
+ * @return false 
+ */
 
-bool processFaceImage(const string& path,
-                      double& biou,
-                      const string& outPath)
+bool processFaceImage(const string& path, double& biou, const string& outPath)
 {
     Mat left, right;
     std::vector<Point> leftPts, rightPts;
@@ -194,10 +241,16 @@ bool processFaceImage(const string& path,
     return true;
 }
 
-
-bool processVideo(const string& path,
-                  double& biou,
-                  string outPath)
+/**
+ * @brief 
+ * Runs the full processing pipeline over a video stream, performing per-frame face/eye analysis, pupil detection, and score accumulation.
+ * @param path The file path to the input video file or the camera device index to be processed.
+ * @param biou Output parameter: The accumulated or averaged BIoU score calculated across all analyzed frames, returned by reference.
+ * @param outPath The directory path where resulting output will be saved only one of the most recently processed frame will be saved.
+ * @return true 
+ * @return false 
+ */
+bool processVideo(const string& path, double& biou, string outPath)
 {
     VideoCapture cap(path);
     if (!cap.isOpened()) return false;
@@ -240,11 +293,21 @@ bool processVideo(const string& path,
 
     return true;
 }
-
+/**
+ * @brief 
+ * The main function of the command line argument batch process which takes one input argument.
+ * The path of the folder that contains the file dataset and prints the
+ * 1. Total ACCURACY
+ * 2. Individual validation success or failure of classification
+ * 3. Individual BIoU scores for the images
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        cerr << "Usage: ./app imageDataset\n";
+        cerr << "Usage: ./batchProcess <imageDataset_file_path>\n";
         return 1;
     }
 
@@ -256,7 +319,7 @@ int main(int argc, char** argv)
 
     int total = 0, correct = 0;
 
-    cout << left << setw(30) << "Filename"
+    cout << left << setw(40) << "Filename"
          << setw(12) << "Type"
          << setw(10) << "BIoU"
          << setw(12) << "Correct\n";

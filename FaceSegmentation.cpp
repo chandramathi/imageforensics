@@ -8,10 +8,15 @@
 using namespace cv;
 using namespace std;
 
-static dlib::rectangle expandEyeBox(
-    const dlib::full_object_detection& shape,
-    const std::vector<int>& idx,
-    int w, int h)
+/** This function adds a few pixels while segmenting a bit more than the original
+returned through dlib because when the eyelids are narrow or almost closed the
+further operations down the pipeline will throw an error because of lack of pixels to work with
+ @param shape dlib facial landmark detection result (contains coordinates for all facial features).
+ @param idx List of landmark indices corresponding specifically to the points of the eye.
+ @param w Desired padding width to add to the eye box.
+ @param h Desired padding height to add to the eye box.
+*/
+static dlib::rectangle expandEyeBox( const dlib::full_object_detection& shape, const std::vector<int>& idx, int w, int h)
 {
     long minx = shape.part(idx[0]).x();
     long maxx = minx;
@@ -46,12 +51,19 @@ static dlib::rectangle expandEyeBox(
     return dlib::rectangle(x1, y1, x2, y2);
 }
 
-bool extractEyesFromFace(
-    const string& imagePath,
-    cv::Mat& leftEye,
-    cv::Mat& rightEye,
-    std::vector<cv::Point>& leftLandmarks,
-    std::vector<cv::Point>& rightLandmarks)
+/**
+ @brief Extracts the left and right eye regions from a detected face image.
+  dlib library to extract the left and right eyes Which are further send down for pupil extraction
+ This function performs facial landmark detection, identifies the eye landmarks,
+ and then crops and possibly normalizes the image patches corresponding to the eyes.
+ @param imagePath Path to the input image file containing a face.
+ @param leftEye Output parameter: The extracted image patch containing the left eye.
+ @param rightEye Output parameter: The extracted image patch containing the right eye.
+ @param leftLandmarks Output parameter: A vector of specific landmark points (e.g., dlib indices) found for the left eye.
+ @param rightLandmarks Output parameter: A vector of specific landmark points (e.g., dlib indices) found for the right eye.
+ @return bool Returns true if the eyes were successfully extracted and landmarks were found, false otherwise.
+ */
+bool extractEyesFromFace(const string& imagePath, Mat& leftEye, Mat& rightEye, std::vector<Point>& leftLandmarks, std::vector<Point>& rightLandmarks)
 {
     dlib::array2d<dlib::rgb_pixel> img;
     try { load_image(img, imagePath); }
@@ -81,24 +93,24 @@ bool extractEyesFromFace(
     assign_image(Limg, sub_image(img, Lrect));
     assign_image(Rimg, sub_image(img, Rrect));
 
-    leftEye  = cv::Mat(Limg.nr(), Limg.nc(), CV_8UC3);
-    rightEye = cv::Mat(Rimg.nr(), Rimg.nc(), CV_8UC3);
+    leftEye  = Mat(Limg.nr(), Limg.nc(), CV_8UC3);
+    rightEye = Mat(Rimg.nr(), Rimg.nc(), CV_8UC3);
 
     for (long r = 0; r < Limg.nr(); r++)
         for (long c = 0; c < Limg.nc(); c++)
-            leftEye.at<cv::Vec3b>(r,c) =
-                cv::Vec3b(Limg[r][c].blue, Limg[r][c].green, Limg[r][c].red);
+            leftEye.at<Vec3b>(r,c) =
+                Vec3b(Limg[r][c].blue, Limg[r][c].green, Limg[r][c].red);
 
     for (long r = 0; r < Rimg.nr(); r++)
         for (long c = 0; c < Rimg.nc(); c++)
-            rightEye.at<cv::Vec3b>(r,c) =
-                cv::Vec3b(Rimg[r][c].blue, Rimg[r][c].green, Rimg[r][c].red);
+            rightEye.at<Vec3b>(r,c) =
+                Vec3b(Rimg[r][c].blue, Rimg[r][c].green, Rimg[r][c].red);
 
     leftLandmarks.clear();
     rightLandmarks.clear();
 
     for (int idx : leftIdx) {
-        cv::Point p(shape.part(idx).x(), shape.part(idx).y());
+        Point p(shape.part(idx).x(), shape.part(idx).y());
 
         int x = p.x - Lrect.left();
         int y = p.y - Lrect.top();
@@ -111,7 +123,7 @@ bool extractEyesFromFace(
     }
 
     for (int idx : rightIdx) {
-        cv::Point p(shape.part(idx).x(), shape.part(idx).y());
+        Point p(shape.part(idx).x(), shape.part(idx).y());
 
         int x = p.x - Rrect.left();
         int y = p.y - Rrect.top();

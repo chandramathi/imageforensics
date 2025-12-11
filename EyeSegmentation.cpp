@@ -1,7 +1,13 @@
 #include "EyeSegmentation.h"
 using namespace cv;
 
-cv::Mat normalizeEyeCrop(const cv::Mat& eye)
+/**
+ * @brief 
+ * Preprocessing step to normalize an input segmented Eye
+ * @param eye matrix of pixels
+ * @return  normalized eye matrix
+ */
+Mat normalizeEyeCrop(const Mat& eye)
 {
     int w = eye.cols, h = eye.rows;
     int side = std::max(w, h);
