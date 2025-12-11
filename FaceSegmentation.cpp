@@ -55,7 +55,10 @@ bool extractEyesFromFace(
 {
     dlib::array2d<dlib::rgb_pixel> img;
     try { load_image(img, imagePath); }
-    catch (...) { return false; }
+    catch (...) { 
+        cout<<"Image loading failed";
+        return false; 
+    }
 
     dlib::frontal_face_detector detector = dlib::get_frontal_face_detector();
     dlib::shape_predictor sp;
