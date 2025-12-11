@@ -21,6 +21,7 @@ Download the file from the following path (wasn't able to commit to git due to s
 ```cpp
 https://drive.google.com/file/d/1bTncJBz7xaIIRg2VO590DAufrzhy4wxv/view?usp=drive_link
 ```
+That is unless you've renamed the imageforensics directory there should be a file shape_predictor_68_face_landmarks.dat inside that directory if not the directory in which the source code is cloned should contain the directory.
 
 ## Step 2: Compile the project
 ``` cpp
